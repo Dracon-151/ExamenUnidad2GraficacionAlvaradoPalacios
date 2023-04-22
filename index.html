@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js" integrity="sha512-3RlxD1bW34eFKPwj9gUXEWtdSMC59QqIqHnD8O/NoTwSJhgxRizdcFVQhUMFyTp5RwLTDL0Lbcqtl8b7bFAzog==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Examen Unidad 2 Alexis Alvarado</title>
+</head>
+<body style="margin: 0px;">
+
+    <input
+        class="form-control p-3"
+        id="inputNumber"
+        type="number" 
+        min="1" 
+        onchange="updateValue()"
+        oninput="updateValue()"
+        value="1"
+    />
+</body>
+
+<script>
+    
+    var inputNumber = 1;
+    var circ1, circ2, circ3;
+
+    function updateValue(){
+        inputNumber = document.getElementById('inputNumber').value;
+    }
+
+    function setup(){
+        createCanvas(windowWidth, windowHeight);
+        
+        circ1 = new Circulo(windowWidth/2, windowHeight/2, 100, lineaPuntoPendiente, 'Punto pendiente');
+        circ2 = new Circulo(windowWidth/4, windowHeight/2, 100, lineaDDA, 'DDA');
+        circ3 = new Circulo(windowWidth/4 * 3, windowHeight/2, 100, lineaBresenham, 'Bresenham');
+    }
+
+    function draw(){
+        background(125, 225, 125);
+      
+        textSize(40)
+        text('^ Ingrese un número', windowWidth/25, windowHeight/8)
+
+        circ1.draw();
+        circ2.draw();
+        circ3.draw();
+    }
+
+    
+    function octantes(xc, yc, x, y) {
+
+        strokeWeight(3);
+        stroke(0);
+        
+        point(xc + y, yc - x);
+        point(xc + x, yc - y);
+        point(xc - x, yc - y);
+        point(xc - y, yc - x);
+        point(xc - y, yc + x);
+        point(xc - x, yc + y);
+        point(xc + x, yc + y);
+        point(xc + y, yc + x);
+    }
+
+    function drawCirculo(xc, yc, r) {
+        let x = 0;
+        let y = r;
+        let p = (5 / 4) - r;
+
+        octantes(xc, yc, x, y);
+
+        while (x < y) {
+            x++;
+
+            if (p < 0) {
+                p += (2 * x) + 1;
+            } else {
+                y--;
+                p += (2 * x) + 1 - (2 * y);
+            }
+
+            octantes(xc, yc, x, y);
+        }
+    }
+
+    class Circulo {
+        constructor(x, y, r, lineFunction, functionName) {
+          this.x = x;
+          this.y = y;
+          this.r = r;
+          this.lineFunction = lineFunction
+          this.functionName = functionName
+        }
+
+        draw() {
+            drawCirculo(this.x, this.y, this.r);
+            
+            textSize(30)
+            text(this.functionName, this.x - this.r, this.y - this.r - 40)
+
+            if(inputNumber > 1){
+                for (let i = 0; i < inputNumber; i++) {
+                    let angulo = radians(360 / inputNumber * i);
+                    let x1 = this.x + this.r * cos(angulo);
+                    let y1 = this.y + this.r * sin(angulo);
+                    let x2 = this.x + this.r * cos(angulo + PI);
+                    let y2 = this.y + this.r * sin(angulo + PI);
+
+
+                    if(inputNumber % 2 != 0){
+                        x1 = this.x;
+                        y1 = this.y;
+                    }
+
+                    if(x1 > x2){
+                        this.lineFunction(x2,y2,x1,y1);
+                    }
+                    else{
+                        this.lineFunction(x1,y1,x2,y2);
+                    }
+
+                }
+            }
+        }
+    }
+
+    function lineaDDA(x1,y1,x2,y2){
+        
+        strokeWeight(3);
+
+        let m = (y2 - y1) / (x2 - x1);
+
+        if(Math.abs(m) <= 1 && Math.abs(m) >= 0){
+            let y = y1;
+
+            for (let x = x1; x <= x2; x++) {
+                point(Math.round(x), Math.round(y));
+                y += m;
+            }  
+        }
+        else if(m > 1){
+            let x = x1;
+            
+            for (let y = y1; y <= y2; y++) {
+                point(Math.round(x), Math.round(y));
+                x += (1/ m);
+            }  
+        }
+        else if(m < -1){
+            let x = x2;
+            
+            for (let y = y2; y <= y1; y++) {
+                point(Math.round(x), Math.round(y));
+                x += (1/ m);
+            }  
+        }
+    }
+
+    function lineaBresenham(x1,y1,x2,y2){
+        
+        strokeWeight(3);
+    
+        if (x1 == x2) {
+            for (let y = min(y1, y2); y <= max(y1, y2); y++) {
+                point(x1, y);
+            }
+        }
+        else{
+    
+            let dx = abs(x2 - x1);
+            let dy = abs(y2 - y1);
+            let sx = x1 < x2 ? 1 : -1;
+            let sy = y1 < y2 ? 1 : -1;
+            let err = dx - dy;
+    
+            let x = x1;
+            let y = y1;
+    
+            while (true) {
+                point(x, y);
+    
+                if (Math.abs(x - x2) < 1 && Math.abs(y - y2) < 1) {
+                    break;
+                }
+    
+                let e2 = 2*err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y += sy;
+                }
+            }
+        }
+    }
+    
+    function lineaPuntoPendiente(x1,y1,x2,y2){
+        
+        strokeWeight(3);
+
+        if(x1!=x2){
+            let m = (y2 - y1) / (x2 - x1);
+            let b = y1 - m * x1;
+    
+            for (let x = x1; x <= x2; x++) {
+                let y = m * x + b;
+                point(x, y);
+            }  
+        }
+        else{
+            for (let y = y1; y <= y2; y++) {
+                point(x1, y);
+            }  
+        }
+    }
+
+</script>
+</html>
